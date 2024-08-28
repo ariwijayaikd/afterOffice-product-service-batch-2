@@ -9,24 +9,26 @@ type XxxResponse struct {
 type XxxResult struct {
 }
 
-type GetDetailProductRequest struct {
-	Id string `json:"id" db:"id"`
+type GetProductByIdRequest struct {
+	Id string `json:"product_id" db:"p.id"`
 	// ShopId string `json:"shop_id" db:"shop_id"`
 }
 
-type GetDetailProductResponse struct {
-	Id          string `json:"id" db:"id"`
+type GetProductByIdResponse struct {
+	UserId      string `json:"user_id" db:"user_id"`
 	ShopId      string `json:"shop_id" db:"shop_id"`
-	Name        string `json:"name" db:"name"`
-	Description string `json:"description" db:"description"`
-	Categories  string `json:"categories" db:"categories"`
-	Price       string `json:"price" db:"price"`
-	Stocks      string `json:"stocks" db:"stocks"`
-	SoftDelete  bool   `json:"soft_delete" db:"soft_delete"`
+	ShopName    string `json:"shop_name" db:"shop_name"`
+	Id          string `json:"product_id" db:"product_id"`
+	Name        string `json:"product_name" db:"product_name"`
+	Description string `json:"product_desc" db:"product_desc"`
+	Categories  string `json:"product_cat" db:"product_cat"`
+	Price       string `json:"product_price" db:"product_price"`
+	Stocks      string `json:"product_stocks" db:"product_stocks"`
+	// SoftDelete  bool   `json:"soft_delete" db:"soft_delete"`
 }
 
 type CreateProductRequest struct {
-	// UserId string `validate:"uuid" db:"user_id"`
+	UserId string `validate:"uuid" db:"user_id"`
 	ShopId string `validate:"uuid" db:"shop_id"`
 
 	// ShopId      string `json:"shop_id" db:"shop_id"`
@@ -42,6 +44,8 @@ type CreateProductResponse struct {
 }
 
 type UpdateProductRequest struct {
+	UserId string `prop:"user_id" validate:"uuid" db:"user_id"`
+
 	Id          string `json:"id" db:"id"`
 	ShopId      string `json:"shop_id" db:"shop_id"`
 	Name        string `json:"name" db:"name"`
@@ -62,8 +66,8 @@ type DeleteProductRequest struct {
 }
 
 type GetAllProductRequest struct {
-	Name       string `json:"name" db:"p.name"`
-	Categories string `json:"categories" db:"p.categories"`
+	Name       string `json:"product_name" db:"p.name"`
+	Categories string `json:"product_categories" db:"p.categories"`
 	Page       int    `query:"page" validate:"required"`
 	Paginate   int    `query:"paginate" validate:"required"`
 }
@@ -79,14 +83,14 @@ func (r *GetAllProductRequest) SetProductDefault() {
 }
 
 type GetAllProductItem struct {
-	Id          string  `json:"id" db:"s.id"`
-	ShopName    string  `json:"shop_name" db:"s.name"`
-	ProductId   string  `json:"product_id" db:"p.id"`
-	ProductName string  `json:"product_name" db:"p.name"`
-	Description string  `json:"description" db:"p.description"`
-	Categories  string  `json:"categories" db:"p.categories"`
-	Price       float64 `json:"price" db:"p.price"`
-	Stocks      int     `json:"stocks" db:"p.stocks"`
+	Id          string  `json:"shop_id" db:"shop_id"`
+	ShopName    string  `json:"shop_name" db:"shop_name"`
+	ProductId   string  `json:"product_id" db:"product_id"`
+	ProductName string  `json:"product_name" db:"product_name"`
+	Description string  `json:"product_description" db:"product_description"`
+	Categories  string  `json:"product_categories" db:"product_categories"`
+	Price       float64 `json:"product_price" db:"product_price"`
+	Stocks      int     `json:"product_stocks" db:"product_stocks"`
 }
 
 type GetAllProductResponse struct {

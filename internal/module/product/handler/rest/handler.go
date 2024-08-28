@@ -30,8 +30,9 @@ func NewProductHandler() *productHandler {
 }
 
 func (h *productHandler) Register(router fiber.Router) {
-	router.Post("/shops/product", middleware.ShopIdHeader, h.CreateProduct)
+	router.Post("/shops/product", middleware.UserIdHeader, middleware.ShopIdHeader, h.CreateProduct)
 	router.Get("/shops/product/search", h.GetAllProduct)
+	router.Get("/shops/product/:id", h.GetProductById)
 }
 
 func (h *productHandler) CreateProduct(c *fiber.Ctx) error {
@@ -39,7 +40,8 @@ func (h *productHandler) CreateProduct(c *fiber.Ctx) error {
 		req = new(entity.CreateProductRequest)
 		ctx = c.Context()
 		v   = adapter.Adapters.Validator
-		l   = middleware.GetShopLocals(c)
+		l   = middleware.GetLocals(c)
+		sl  = middleware.GetShopLocals(c)
 	)
 
 	if err := c.BodyParser(req); err != nil {
@@ -47,8 +49,8 @@ func (h *productHandler) CreateProduct(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(response.Error(err))
 	}
 
-	req.ShopId = l.ShopId
-	// req.UserId = l.UserId
+	req.UserId = l.UserId
+	req.ShopId = sl.ShopId
 
 	if err := v.Validate(req); err != nil {
 		log.Warn().Err(err).Any("payload", req).Msg("handler::CreateProduct - Validator request body")
@@ -84,6 +86,30 @@ func (h *productHandler) GetAllProduct(c *fiber.Ctx) error {
 	}
 
 	resp, err := h.service.GetAllProduct(ctx, req)
+	if err != nil {
+		code, errs := errmsg.Errors[error](err)
+		return c.Status(code).JSON(response.Error(errs))
+	}
+
+	return c.Status(fiber.StatusOK).JSON(response.Success(resp, ""))
+}
+
+func (h *productHandler) GetProductById(c *fiber.Ctx) error {
+	var (
+		req = new(entity.GetProductByIdRequest)
+		ctx = c.Context()
+		// v   = adapter.Adapters.Validator
+	)
+
+	req.Id = c.Params("id")
+
+	// if err := v.Validate(req); req != nil {
+	// 	log.Warn().Err(err).Any("payload", req).Msg("handler::GetProductbyId - Validate request body")
+	// 	code, errs := errmsg.Errors(err, req)
+	// 	return c.Status(code).JSON(response.Error(errs))
+	// }
+
+	resp, err := h.service.GetProductById(ctx, req)
 	if err != nil {
 		code, errs := errmsg.Errors[error](err)
 		return c.Status(code).JSON(response.Error(errs))

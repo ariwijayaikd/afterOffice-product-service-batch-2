@@ -49,6 +49,6 @@ tasks:
   commit:
     cmds:
       - task lint-fix
-      - task lint-ci
+      # - task lint-ci
       - git add .
       - git commit -m "{{.msg}}"

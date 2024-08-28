@@ -45,24 +45,35 @@ func (r *productRepository) CreateProduct(ctx context.Context, req *entity.Creat
 	return res, nil
 }
 
-// func (r *productRepository) DetailProductbyId(ctx context.Context, req *entity.GetDetailProductRequest) (*entity.GetDetailProductResponse, error) {
-// 	var res = new(entity.GetDetailProductResponse)
+func (r *productRepository) GetProductById(ctx context.Context, req *entity.GetProductByIdRequest) (*entity.GetProductByIdResponse, error) {
+	var res = new(entity.GetProductByIdResponse)
 
-// 	query := `
-// 		SELECT p.id, s.shop_id, s.name, p.name, p.description, p.categories, p.price, p.stocks, p.created_at, p.updated_at, p.deleted_at
-// 		FROM products p
-// 		JOIN shops s ON s.id = p.shop_id
-// 		WHERE p.id = ?
-// 	`
+	query := `
+		SELECT 
+			s.user_id as user_id,
+			s.id as shop_id,
+			s.name as shop_name,
+			p.id as product_id,
+			p.name as product_name,
+			p.description as product_desc,
+			p.categories as product_cat,
+			p.price as product_price,
+			p.stocks as product_stocks
+		FROM
+			products p 
+			JOIN shops s ON s.id = p.shop_id 
+		WHERE
+			p.id = ?
+	`
 
-// 	err := r.db.QueryRowxContext(ctx, r.db.Rebind(query), req.Id).StructScan(res)
-// 	if err != nil {
-// 		log.Error().Err(err).Any("payload", req).Msg("repository::DetailProductbyId - Failed to get DetailProductbyId")
-// 		return nil, err
-// 	}
+	err := r.db.QueryRowxContext(ctx, r.db.Rebind(query), req.Id).StructScan(res)
+	if err != nil {
+		log.Error().Err(err).Any("payload", req).Msg("repository::DetailProductbyId - Failed to get DetailProductbyId")
+		return nil, err
+	}
 
-// 	return res, nil
-// }
+	return res, nil
+}
 
 func (r *productRepository) GetAllProduct(ctx context.Context, req *entity.GetAllProductRequest) (*entity.GetAllProductResponse, error) {
 	type dao struct {
@@ -78,28 +89,28 @@ func (r *productRepository) GetAllProduct(ctx context.Context, req *entity.GetAl
 
 	query := `
 		SELECT 
-			COUNT (p.id) OVER() as total_data,
-			s.id, 
-			s.name, 
-			p.id, 
-			p.name, 
-			p.description, 
-			p.categories, 
-			p.price, p.stocks
+			COUNT(p.id) OVER() as total_data,
+			s.id as shop_id, 
+			s.name as shop_name, 
+			p.id as product_id, 
+			p.name as product_name, 
+			p.description as product_description, 
+			p.categories as product_categories, 
+			p.price as product_price, 
+			p.stocks as product_stocks
 		FROM products p
-		JOIN shops s on s.id = p.shop_id
-		WHERE p.name LIKE ? and p.categories LIKE ?
+		JOIN shops s ON s.id = p.shop_id
+		WHERE p.name LIKE ? AND p.categories LIKE ?
 		LIMIT ? OFFSET ?
-	`
+		`
 
-	err := r.db.SelectContext(ctx, r.db.Rebind(query),
-		req.Name,
-		req.Categories,
-		// "'%"+req.Name+"%'",
-		// "'%"+req.Categories+"%'",
+	err := r.db.SelectContext(ctx, &data, r.db.Rebind(query),
+		"'%"+req.Name+"%'",
+		"'%"+req.Categories+"%'",
 		req.Paginate,
 		req.Paginate*(req.Page-1),
 	)
+
 	if err != nil {
 		log.Error().Err(err).Any("payload", req).Msg("repository::GetAllProduct - Failed to get all product")
 		return nil, err

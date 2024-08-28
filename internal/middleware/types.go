@@ -33,7 +33,6 @@ func (l *Locals) GetRole() string {
 // for create product with X-SHOP-ID
 type ShopLocals struct {
 	ShopId string
-	// Role   string
 }
 
 func GetShopLocals(c *fiber.Ctx) *ShopLocals {
