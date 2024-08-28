@@ -10,7 +10,8 @@ type XxxResult struct {
 }
 
 type GetProductByIdRequest struct {
-	Id string `json:"product_id" db:"p.id"`
+	Id string `validate:"uuid" db:"p.id"`
+	// Id string `json:"product_id" db:"p.id"`
 	// ShopId string `json:"shop_id" db:"shop_id"`
 }
 
@@ -45,9 +46,9 @@ type CreateProductResponse struct {
 
 type UpdateProductRequest struct {
 	UserId string `prop:"user_id" validate:"uuid" db:"user_id"`
+	ShopId string `prop:"user_id" validate:"uuid" db:"user_id"`
 
 	Id          string `json:"id" db:"id"`
-	ShopId      string `json:"shop_id" db:"shop_id"`
 	Name        string `json:"name" db:"name"`
 	Description string `json:"description" db:"description"`
 	Categories  string `json:"categories" db:"categories"`
