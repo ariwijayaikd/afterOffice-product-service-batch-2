@@ -29,3 +29,48 @@ func (l *Locals) GetUserId() string {
 func (l *Locals) GetRole() string {
 	return l.Role
 }
+
+// for create product with X-SHOP-ID
+type ShopLocals struct {
+	ShopId string
+	// Role   string
+}
+
+func GetShopLocals(c *fiber.Ctx) *ShopLocals {
+	var l = ShopLocals{}
+	shopId, ok := c.Locals("shop_id").(string)
+	if ok {
+		l.ShopId = shopId
+	} else {
+		log.Warn().Msg("middleware::Locals-GetShopLocals failed to get shop_id from locals")
+	}
+	return &l
+}
+
+func (l *ShopLocals) GetShopId() string {
+	return l.ShopId
+}
+
+// for get all product
+type ProductLocals struct {
+	Name       string
+	Categories string
+}
+
+func GetProductLocals(c *fiber.Ctx) *ProductLocals {
+	var l = ProductLocals{}
+	name, ok := c.Locals("name").(string)
+	if ok {
+		l.Name = name
+	} else {
+		log.Warn().Msg("middleware::Locals-GetProductLocals failed to get name from locals")
+	}
+	return &l
+}
+
+func (l *ProductLocals) GetProductName() string {
+	return l.Name
+}
+func (l *ProductLocals) GetProductCategories() string {
+	return l.Categories
+}
