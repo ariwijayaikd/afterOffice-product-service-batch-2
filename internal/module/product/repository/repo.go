@@ -4,7 +4,6 @@ import (
 	"codebase-app/internal/module/product/entity"
 	"codebase-app/internal/module/product/ports"
 	"context"
-	"time"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/rs/zerolog/log"
@@ -79,20 +78,9 @@ func (r *productRepository) GetProductById(ctx context.Context, req *entity.GetP
 }
 
 func (r *productRepository) GetAllProduct(ctx context.Context, req *entity.GetAllProductRequest) (*entity.GetAllProductResponse, error) {
-	// type dao struct {
-	// 	TotalData int `db:"total_data"`
-	// 	entity.GetAllProductItem
-	// }
 	type dao struct {
-		TotalData   int       `db:"total_data"`
-		Id          string    `db:"id"`
-		ShopId      string    `db:"shop_id"`
-		Name        string    `db:"name"`
-		Description string    `db:"description"`
-		Price       float64   `db:"price"`
-		Stocks      int       `db:"stocks"`
-		CreatedAt   time.Time `db:"created_at"`
-		UpdatedAt   time.Time `db:"updated_at"`
+		TotalData int `db:"total_data"`
+		entity.GetAllProductItem
 	}
 
 	var (

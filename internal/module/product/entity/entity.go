@@ -144,7 +144,7 @@ type GetAllProductItem struct {
 	Id     string `json:"id" db:"id"`
 	ShopId string `json:"shop_id" db:"shop_id"`
 	// CategoryId  string    `json:"category_id" db:"category_id"`
-	Name        string    `json:"name" db:"shop_name"`
+	Name        string    `json:"name" db:"name"`
 	Description string    `json:"description" db:"description"`
 	Price       float64   `json:"price" db:"price"`
 	Stocks      int       `json:"stocks" db:"stocks"`
