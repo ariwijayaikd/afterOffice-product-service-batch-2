@@ -3,16 +3,12 @@ CREATE TABLE IF NOT EXISTS products (
     shop_id UUID NOT NULL,
     name VARCHAR(255) NOT NULL,
     description VARCHAR(255) NOT NULL,
-    categories VARCHAR(255) NOT NULL,
-    -- categories_id UUID NOT NULL,
-    -- price VARCHAR(255) NOT NULL,
-    price MONEY NOT NULL,
+    price NUMERIC NOT NULL,
     stocks INT,
     soft_delete BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now() NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now() NOT NULL,
     deleted_at TIMESTAMP WITH TIME ZONE,
 
-    FOREIGN KEY (shop_id) REFERENCES shops (id) --,
-    -- FOREIGN KEY (categories_id) REFERENCES categories (id)
+    FOREIGN KEY (shop_id) REFERENCES shops (id)
 );

@@ -30,11 +30,11 @@ func NewProductHandler() *productHandler {
 }
 
 func (h *productHandler) Register(router fiber.Router) {
-	router.Post("/shops/product", middleware.UserIdHeader, middleware.ShopIdHeader, h.CreateProduct)
-	router.Get("/shops/product/search", h.GetAllProduct)
-	router.Get("/shops/product/:id", h.GetProductById)
-	router.Delete("/shops/product/:id", middleware.ShopIdHeader, h.DeleteProductById)
-	router.Patch("/shops/product/:id", middleware.ShopIdHeader, h.UpdateProductById)
+	router.Post("/", middleware.UserIdHeader, middleware.ShopIdHeader, h.CreateProduct)
+	router.Get("/q", h.GetAllProduct)
+	router.Get("/:id", h.GetProductById)
+	router.Delete("/:id", middleware.UserIdHeader, middleware.ShopIdHeader, h.DeleteProductById)
+	router.Patch("/:id", middleware.UserIdHeader, middleware.ShopIdHeader, h.UpdateProductById)
 }
 
 func (h *productHandler) CreateProduct(c *fiber.Ctx) error {
@@ -74,11 +74,22 @@ func (h *productHandler) GetAllProduct(c *fiber.Ctx) error {
 		req = new(entity.GetAllProductRequest)
 		ctx = c.Context()
 		v   = adapter.Adapters.Validator
+		// l   = middleware.GetLocals(c)
 	)
+
+	// req.UserId = l.UserId
+	// req.Name = c.Params("name")
+	// req.Categories = c.Params("categories")
 
 	if err := c.QueryParser(req); err != nil {
 		log.Warn().Err(err).Msg("handler::GetAllProduct - Parse request query")
 		return c.Status(fiber.StatusBadRequest).JSON(response.Error(err))
+	}
+
+	req.SetProductDefault()
+
+	if code, err := req.CostumValidation(); code != 0 {
+		return c.Status(code).JSON(response.Error(err))
 	}
 
 	if err := v.Validate(req); err != nil {
@@ -125,9 +136,11 @@ func (h *productHandler) DeleteProductById(c *fiber.Ctx) error {
 		req = new(entity.DeleteProductByIdRequest)
 		ctx = c.Context()
 		v   = adapter.Adapters.Validator
+		l   = middleware.GetLocals(c)
 		sl  = middleware.GetShopLocals(c)
 	)
 
+	req.UserId = l.UserId
 	req.ShopId = sl.ShopId
 	req.Id = c.Params("id")
 
@@ -151,6 +164,7 @@ func (h *productHandler) UpdateProductById(c *fiber.Ctx) error {
 		req = new(entity.UpdateProductByIdRequest)
 		ctx = c.Context()
 		v   = adapter.Adapters.Validator
+		l   = middleware.GetLocals(c)
 		sl  = middleware.GetShopLocals(c)
 	)
 
@@ -159,6 +173,7 @@ func (h *productHandler) UpdateProductById(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(response.Error(err))
 	}
 
+	req.UserId = l.UserId
 	req.ShopId = sl.ShopId
 	req.Id = c.Params("id")
 

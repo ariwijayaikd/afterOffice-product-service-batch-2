@@ -11,7 +11,7 @@ import (
 
 func SetupRoutes(app *fiber.App) {
 	var (
-		shop    = app.Group("/products")
+		shop    = app.Group("/shops")
 		product = app.Group("/products")
 	)
 

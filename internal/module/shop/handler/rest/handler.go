@@ -30,11 +30,11 @@ func NewShopHandler() *shopHandler {
 }
 
 func (h *shopHandler) Register(router fiber.Router) {
-	router.Get("/shops", middleware.UserIdHeader, h.GetShops)
-	router.Post("/shops", middleware.UserIdHeader, h.CreateShop)
-	router.Get("/shops/:id", h.GetShop)
-	router.Delete("/shops/:id", middleware.UserIdHeader, h.DeleteShop)
-	router.Patch("/shops/:id", middleware.UserIdHeader, h.UpdateShop)
+	router.Get("/", middleware.UserIdHeader, h.GetShops)
+	router.Post("/create", middleware.UserIdHeader, h.CreateShop)
+	router.Get("/:id", h.GetShop)
+	router.Delete("/:id", middleware.UserIdHeader, h.DeleteShop)
+	router.Patch("/:id", middleware.UserIdHeader, h.UpdateShop)
 }
 
 func (h *shopHandler) CreateShop(c *fiber.Ctx) error {
