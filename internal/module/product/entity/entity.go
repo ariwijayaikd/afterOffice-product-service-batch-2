@@ -44,26 +44,28 @@ type CreateProductResponse struct {
 	Id string `json:"id" db:"id"`
 }
 
-type UpdateProductRequest struct {
-	UserId string `prop:"user_id" validate:"uuid" db:"user_id"`
-	ShopId string `prop:"user_id" validate:"uuid" db:"user_id"`
+type UpdateProductByIdRequest struct {
+	ShopId string `prop:"shop_id" validate:"uuid" db:"shop_id"`
 
-	Id          string `json:"id" db:"id"`
-	Name        string `json:"name" db:"name"`
-	Description string `json:"description" db:"description"`
-	Categories  string `json:"categories" db:"categories"`
-	Price       string `json:"price" db:"price"`
-	Stocks      string `json:"stocks" db:"stocks"`
-	SoftDelete  bool   `json:"soft_delete" db:"soft_delete"`
+	Id string `params:"id" validate:"uuid" db:"id"`
+
+	Name        string  `json:"name" db:"name"`
+	Description string  `json:"description" db:"description"`
+	Categories  string  `json:"categories" db:"categories"`
+	Price       float64 `json:"price" db:"price"`
+	Stocks      int     `json:"stocks" db:"stocks"`
+	SoftDelete  bool    `json:"soft_delete" db:"soft_delete"`
 }
 
-type UpdateProductResponse struct {
+type UpdateProductByIdResponse struct {
 	Id string `json:"id" db:"id"`
 }
 
-type DeleteProductRequest struct {
-	Id     string `json:"id" db:"id"`
-	ShopId string `json:"shop_id" db:"shop_id"`
+type DeleteProductByIdRequest struct {
+	// UserId string `prop"user_id" validate:"uuid" db:"user_id"`
+	ShopId string `prop:"shop_id" validate:"uuid" db:"shop_id"`
+
+	Id string `validate:"uuid" db:"id"`
 }
 
 type GetAllProductRequest struct {

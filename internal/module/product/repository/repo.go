@@ -126,3 +126,49 @@ func (r *productRepository) GetAllProduct(ctx context.Context, req *entity.GetAl
 
 	return res, nil
 }
+
+func (r *productRepository) DeleteProductById(ctx context.Context, req *entity.DeleteProductByIdRequest) error {
+	query := `
+	    UPDATE products
+		SET deleted_at = NOW()
+		-- FROM shops s
+		-- JOIN shops on s.id = p.shop_id
+		WHERE id = ? AND shop_id = ?
+		-- AND s.user_id = '6f25adf4-2759-426d-af20-2be82f5f728c'
+	`
+
+	_, err := r.db.ExecContext(ctx, r.db.Rebind(query), req.Id, req.ShopId)
+	if err != nil {
+		log.Error().Err(err).Any("payload", req).Msg("repository::DeleteProductById - Failed to delete product")
+		return err
+	}
+
+	return nil
+}
+
+func (r *productRepository) UpdateProductById(ctx context.Context, req *entity.UpdateProductByIdRequest) (*entity.UpdateProductByIdResponse, error) {
+	var resp = new(entity.UpdateProductByIdResponse)
+
+	query := `
+		UPDATE products
+			SET name = ?, description = ?, categories = ?, price = ?, stocks = ?, soft_delete = ?, updated_at = NOW()
+		WHERE id = ? and shop_id = ?
+		RETURNING id
+	`
+
+	err := r.db.QueryRowxContext(ctx, r.db.Rebind(query),
+		req.Name,
+		req.Description,
+		req.Categories,
+		req.Price,
+		req.Stocks,
+		req.SoftDelete,
+		req.Id,
+		req.ShopId).Scan(&resp.Id)
+	if err != nil {
+		log.Error().Err(err).Any("payload", req).Msg("repository::UpdateProductById - Failed to update product")
+		return nil, err
+	}
+
+	return resp, nil
+}

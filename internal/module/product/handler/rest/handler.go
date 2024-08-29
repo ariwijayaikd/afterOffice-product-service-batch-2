@@ -33,6 +33,8 @@ func (h *productHandler) Register(router fiber.Router) {
 	router.Post("/shops/product", middleware.UserIdHeader, middleware.ShopIdHeader, h.CreateProduct)
 	router.Get("/shops/product/search", h.GetAllProduct)
 	router.Get("/shops/product/:id", h.GetProductById)
+	router.Delete("/shops/product/:id", middleware.ShopIdHeader, h.DeleteProductById)
+	router.Patch("/shops/product/:id", middleware.ShopIdHeader, h.UpdateProductById)
 }
 
 func (h *productHandler) CreateProduct(c *fiber.Ctx) error {
@@ -110,6 +112,63 @@ func (h *productHandler) GetProductById(c *fiber.Ctx) error {
 	// }
 
 	resp, err := h.service.GetProductById(ctx, req)
+	if err != nil {
+		code, errs := errmsg.Errors[error](err)
+		return c.Status(code).JSON(response.Error(errs))
+	}
+
+	return c.Status(fiber.StatusOK).JSON(response.Success(resp, ""))
+}
+
+func (h *productHandler) DeleteProductById(c *fiber.Ctx) error {
+	var (
+		req = new(entity.DeleteProductByIdRequest)
+		ctx = c.Context()
+		v   = adapter.Adapters.Validator
+		sl  = middleware.GetShopLocals(c)
+	)
+
+	req.ShopId = sl.ShopId
+	req.Id = c.Params("id")
+
+	if err := v.Validate(req); err != nil {
+		log.Warn().Err(err).Any("payload", req).Msg("handler::DeleteProductById - Validate request body")
+		code, errs := errmsg.Errors(err, req)
+		return c.Status(code).JSON(response.Error(errs))
+	}
+
+	err := h.service.DeleteProductById(ctx, req)
+	if err != nil {
+		code, errs := errmsg.Errors[error](err)
+		return c.Status(code).JSON(response.Error(errs))
+	}
+
+	return c.Status(fiber.StatusOK).JSON(response.Success(nil, ""))
+}
+
+func (h *productHandler) UpdateProductById(c *fiber.Ctx) error {
+	var (
+		req = new(entity.UpdateProductByIdRequest)
+		ctx = c.Context()
+		v   = adapter.Adapters.Validator
+		sl  = middleware.GetShopLocals(c)
+	)
+
+	if err := c.BodyParser(req); err != nil {
+		log.Warn().Err(err).Msg("handler::UpdateProductById - Parse request body")
+		return c.Status(fiber.StatusBadRequest).JSON(response.Error(err))
+	}
+
+	req.ShopId = sl.ShopId
+	req.Id = c.Params("id")
+
+	if err := v.Validate(req); err != nil {
+		log.Warn().Err(err).Any("payload", req).Msg("handler::UpdateProductById - Validate request body")
+		code, errs := errmsg.Errors(err, req)
+		return c.Status(code).JSON(response.Error(errs))
+	}
+
+	resp, err := h.service.UpdateProductById(ctx, req)
 	if err != nil {
 		code, errs := errmsg.Errors[error](err)
 		return c.Status(code).JSON(response.Error(errs))

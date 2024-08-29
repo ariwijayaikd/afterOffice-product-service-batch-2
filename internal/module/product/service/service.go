@@ -29,3 +29,11 @@ func (s *productService) GetProductById(ctx context.Context, req *entity.GetProd
 func (s *productService) GetAllProduct(ctx context.Context, req *entity.GetAllProductRequest) (*entity.GetAllProductResponse, error) {
 	return s.repo.GetAllProduct(ctx, req)
 }
+
+func (s *productService) DeleteProductById(ctx context.Context, req *entity.DeleteProductByIdRequest) error {
+	return s.repo.DeleteProductById(ctx, req)
+}
+
+func (s *productService) UpdateProductById(ctx context.Context, req *entity.UpdateProductByIdRequest) (*entity.UpdateProductByIdResponse, error) {
+	return s.repo.UpdateProductById(ctx, req)
+}
