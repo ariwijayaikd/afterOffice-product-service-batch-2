@@ -14,29 +14,30 @@ type XxxResponse struct {
 type XxxResult struct {
 }
 
-type GetProductByIdRequest struct {
-	Id string `validate:"uuid" db:"p.id"`
-}
+// type GetProductByIdRequest struct {
+// 	Id string `validate:"uuid" db:"p.id"`
+// }
 
-type GetProductByIdResponse struct {
-	Id          string `json:"id" db:"id"`
-	ShopId      string `json:"shop_id" db:"shop_id"`
-	Name        string `json:"name" db:"name"`
-	Description string `json:"description" db:"description"`
-	// Category    string `json:"category" db:"category"`
-	Price  string `json:"price" db:"price"`
-	Stocks string `json:"stocks" db:"stocks"`
-}
+// type GetProductByIdResponse struct {
+// 	Id          string `json:"id" db:"id"`
+// 	ShopId      string `json:"shop_id" db:"shop_id"`
+// 	Name        string `json:"name" db:"name"`
+// 	Description string `json:"description" db:"description"`
+// 	// Category    string `json:"category" db:"category"`
+// 	Price       string   `json:"price" db:"price"`
+// 	Stocks      string   `json:"stocks" db:"stocks"`
+// 	CategoryIds []string `json:"category_ids" db:"category_id"`
+// }
 
 type CreateProductRequest struct {
 	UserId string `validate:"uuid" db:"user_id"`
 	ShopId string `validate:"uuid" db:"shop_id"`
 
-	Name        string `json:"name" db:"name"`
-	Description string `json:"description" db:"description"`
-	// Category    string  `json:"categories" db:"categories"`
-	Price  float64 `json:"price" db:"price"`
-	Stocks int     `json:"stocks" db:"stocks"`
+	Name        string   `json:"name" db:"name"`
+	Description string   `json:"description" db:"description"`
+	Price       float64  `json:"price" db:"price"`
+	Stocks      int      `json:"stocks" db:"stocks"`
+	CategoryIds []string `json:"category_ids" validate:"min=1,max=5"` // ["UUID-1", "UUID-2"]
 }
 
 type CreateProductResponse struct {
@@ -68,9 +69,10 @@ type DeleteProductByIdRequest struct {
 	Id string `validate:"uuid" db:"id"`
 }
 
-type GetAllProductRequest struct {
-	ShopId string `query:"shop_id" validate:"omitempty,uuid"`
-	// CategoryId    string `query:"category_id" validate:"omitempty,uuid"`
+type GetProductRequest struct {
+	ShopId     string `query:"shop_id" validate:"omitempty,uuid"`
+	CategoryId string `query:"category_id" validate:"omitempty,uuid"`
+
 	Name          string `query:"name"`
 	PriceMinStr   string `query:"price_min" validate:"omitempty,numeric,gte=0"`
 	PriceMaxStr   string `query:"price_max" validate:"omitempty,numeric,gte=0"`
@@ -85,7 +87,7 @@ type GetAllProductRequest struct {
 	ProductIds []string
 }
 
-func (r *GetAllProductRequest) SetProductDefault() {
+func (r *GetProductRequest) SetProductDefault() {
 	if r.Page < 1 {
 		r.Page = 1
 	}
@@ -103,7 +105,7 @@ func (r *GetAllProductRequest) SetProductDefault() {
 	}
 }
 
-func (r *GetAllProductRequest) CostumValidation() (int, map[string][]string) {
+func (r *GetProductRequest) CostumValidation() (int, map[string][]string) {
 	var (
 		errors   = make(map[string][]string)
 		err      error
@@ -135,19 +137,20 @@ func (r *GetAllProductRequest) CostumValidation() (int, map[string][]string) {
 	return 0, errors
 }
 
-type GetAllProductResponse struct {
-	Items []GetAllProductItem `json:"items"`
-	Meta  types.Meta          `json:"meta"`
+type GetProductResponse struct {
+	Items []GetProductItem `json:"items"`
+	Meta  types.Meta       `json:"meta"`
 }
 
-type GetAllProductItem struct {
-	Id     string `json:"id" db:"id"`
-	ShopId string `json:"shop_id" db:"shop_id"`
-	// CategoryId  string    `json:"category_id" db:"category_id"`
+type GetProductItem struct {
+	Id          string    `json:"id" db:"id"`
+	ShopId      string    `json:"shop_id" db:"shop_id"`
 	Name        string    `json:"name" db:"name"`
 	Description string    `json:"description" db:"description"`
 	Price       float64   `json:"price" db:"price"`
 	Stocks      int       `json:"stocks" db:"stocks"`
 	CreatedAt   time.Time `json:"created_at" db:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at" db:"updated_at"`
+
+	CategoryIds []string `json:"category_ids" db:"category_id"`
 }

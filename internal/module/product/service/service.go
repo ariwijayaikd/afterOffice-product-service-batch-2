@@ -22,12 +22,12 @@ func (s *productService) CreateProduct(ctx context.Context, req *entity.CreatePr
 	return s.repo.CreateProduct(ctx, req)
 }
 
-func (s *productService) GetProductById(ctx context.Context, req *entity.GetProductByIdRequest) (*entity.GetProductByIdResponse, error) {
-	return s.repo.GetProductById(ctx, req)
-}
+// func (s *productService) GetProductById(ctx context.Context, req *entity.GetProductByIdRequest) (*entity.GetProductByIdResponse, error) {
+// 	return s.repo.GetProductById(ctx, req)
+// }
 
-func (s *productService) GetAllProduct(ctx context.Context, req *entity.GetAllProductRequest) (*entity.GetAllProductResponse, error) {
-	return s.repo.GetAllProduct(ctx, req)
+func (s *productService) GetProduct(ctx context.Context, req *entity.GetProductRequest) (*entity.GetProductResponse, error) {
+	return s.repo.GetProduct(ctx, req)
 }
 
 func (s *productService) DeleteProductById(ctx context.Context, req *entity.DeleteProductByIdRequest) error {

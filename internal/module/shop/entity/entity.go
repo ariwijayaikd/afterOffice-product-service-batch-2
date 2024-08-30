@@ -37,6 +37,7 @@ type UpdateShopRequest struct {
 	Name        string `json:"name" validate:"required" db:"name"`
 	Description string `json:"description" validate:"required" db:"description"`
 	Terms       string `json:"terms" validate:"required" db:"terms"`
+	SoftDelete  bool   `json:"soft_delete" db:"soft_delete"`
 }
 
 type UpdateShopResponse struct {

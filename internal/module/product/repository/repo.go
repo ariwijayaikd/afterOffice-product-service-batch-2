@@ -23,22 +23,57 @@ func NewProductRepository(db *sqlx.DB) *productRepository {
 
 func (r *productRepository) CreateProduct(ctx context.Context, req *entity.CreateProductRequest) (*entity.CreateProductResponse, error) {
 	var res = new(entity.CreateProductResponse)
+	// table ini merupakan relasi antara product dan category yang dimilikinya
+	// product_category -> product_id, category_id -> product dan category
 
-	queryProduct := `
+	// code lama
+	// query := `
+	// 	INSERT INTO products (shop_id, name, description, price, stocks, created_at, updated_at)
+	// 	VALUES (?, ?, ?, ?, ?, now(), now())
+	// 	RETURNING id
+	// `
+
+	// err := r.db.QueryRowxContext(ctx, r.db.Rebind(query),
+	// 	req.ShopId,
+	// 	req.Name,
+	// 	req.Description,
+	// 	// req.Category,
+	// 	req.Price,
+	// 	req.Stocks).Scan(&res.Id)
+	// if err != nil {
+	// 	log.Error().Err(err).Any("payload", req).Msg("repository::CreateProduct - Failed to create product")
+	// 	return nil, err
+	// }
+
+	// return res, nil
+
+	//code baru
+
+	tx, err := r.db.BeginTxx(ctx, nil)
+	defer func() {
+		if err != nil {
+			err := tx.Rollback()
+			if err != nil {
+				log.Error().Err(err).Msg("repository::CreateProduct - Failed to rollback transaction")
+			}
+		} else {
+			err := tx.Commit()
+			if err != nil {
+				log.Error().Err(err).Msg("repository::CreateProduct - Failed to commit transaction")
+			}
+		}
+	}()
+
+	query := `
 		INSERT INTO products (shop_id, name, description, price, stocks, created_at, updated_at)
-		VALUES (?, ?, ?, ?, ?, now(), now())
-		RETURNING id
+        VALUES (?, ?, ?, ?, ?, now(), now())
+        RETURNING id
 	`
 
-	// queryProductCategory := `
-	// 	INSERT INTO product_category (product_id, category_id)
-	// 	VALUES (?, ?);
-	// `
-	err := r.db.QueryRowxContext(ctx, r.db.Rebind(queryProduct),
+	err = tx.QueryRowContext(ctx, r.db.Rebind(query),
 		req.ShopId,
 		req.Name,
 		req.Description,
-		// req.Category,
 		req.Price,
 		req.Stocks).Scan(&res.Id)
 	if err != nil {
@@ -46,65 +81,79 @@ func (r *productRepository) CreateProduct(ctx context.Context, req *entity.Creat
 		return nil, err
 	}
 
-	return res, nil
-}
-
-func (r *productRepository) GetProductById(ctx context.Context, req *entity.GetProductByIdRequest) (*entity.GetProductByIdResponse, error) {
-	var res = new(entity.GetProductByIdResponse)
-
-	query := `
-		SELECT 
-			id,
-			shop_id,
-			name,
-			description,
-			price,
-			stocks
-		FROM
-			products
-		WHERE
-			id = ?
+	query = `
+		INSERT INTO products_category (product_id, category_id)
+        VALUES (?, ?)
 	`
 
-	err := r.db.QueryRowxContext(ctx, r.db.Rebind(query), req.Id).StructScan(res)
-	if err != nil {
-		// if check error sql no rows
-
-		log.Error().Err(err).Any("payload", req).Msg("repository::DetailProductbyId - Failed to get DetailProductbyId")
-		return nil, err
+	for _, categoryId := range req.CategoryIds {
+		_, err = tx.ExecContext(ctx, r.db.Rebind(query), res.Id, categoryId)
+		if err != nil {
+			log.Error().Err(err).Any("payload", req).Msg("repository::CreateProduct - Failed to create product category")
+			return nil, err
+		}
 	}
 
 	return res, nil
 }
 
-func (r *productRepository) GetAllProduct(ctx context.Context, req *entity.GetAllProductRequest) (*entity.GetAllProductResponse, error) {
+// func (r *productRepository) GetProductById(ctx context.Context, req *entity.GetProductByIdRequest) (*entity.GetProductByIdResponse, error) {
+// 	var res = new(entity.GetProductByIdResponse)
+
+// 	query := `
+// 		SELECT
+// 			id,
+// 			shop_id,
+// 			name,
+// 			description,
+// 			price,
+// 			stocks
+// 		FROM
+// 			products
+// 		WHERE
+// 			id = ?
+// 	`
+
+// 	err := r.db.QueryRowxContext(ctx, r.db.Rebind(query), req.Id).StructScan(res)
+// 	if err != nil {
+// 		// if check error sql no rows
+
+// 		log.Error().Err(err).Any("payload", req).Msg("repository::DetailProductbyId - Failed to get DetailProductbyId")
+// 		return nil, err
+// 	}
+
+// 	return res, nil
+// }
+
+func (r *productRepository) GetProduct(ctx context.Context, req *entity.GetProductRequest) (*entity.GetProductResponse, error) {
 	type dao struct {
 		TotalData int `db:"total_data"`
-		entity.GetAllProductItem
+		entity.GetProductItem
 	}
 
 	var (
-		res  = new(entity.GetAllProductResponse)
+		res  = new(entity.GetProductResponse)
 		data = make([]dao, 0)
-		// data = make([]dao, 0, req.Paginate)
-		arg = make(map[string]any)
+		arg  = make(map[string]any)
 	)
-	// res.Items = make([]entity.GetAllProductItem, 0, req.Paginate)
 	res.Meta.Page = req.Page
 	res.Meta.Paginate = req.Paginate
 
 	query := `
 		SELECT 
-			COUNT(id) OVER() as total_data,
-			id, 
-			shop_id,  
-			name, 
-			description, 
-			price, 
-			stocks,
-			created_at, 
-			updated_at
-		FROM products 
+			COUNT(p.id) OVER() as total_data,
+			p.id as id, 
+			p.shop_id as shop_id,  
+			p.name as name, 
+			p.description as description, 
+			p.price as price, 
+			p.stocks as stocks,
+			p.created_at as created_at, 
+			p.updated_at as updated_at,
+			c.id as category_id
+		FROM products_category pc
+		JOIN products p ON p.id = pc.product_id
+		JOIN category c ON c.id = pc.category_id
 		WHERE soft_delete = false
 	`
 
@@ -124,10 +173,10 @@ func (r *productRepository) GetAllProduct(ctx context.Context, req *entity.GetAl
 		arg["shop_id"] = req.ShopId
 	}
 
-	// if req.CategoryId != "" {
-	// 	query += " AND category_id = :category_id"
-	// 	arg["category_id"] = req.CategoryId
-	// }
+	if req.CategoryId != "" {
+		query += " AND category_id = :category_id"
+		arg["category_id"] = req.CategoryId
+	}
 
 	if req.Name != "" {
 		query += " AND name ILIKE '%' || :name || '%'"
@@ -158,28 +207,35 @@ func (r *productRepository) GetAllProduct(ctx context.Context, req *entity.GetAl
 
 	nstmt, err := r.db.PrepareNamedContext(ctx, query)
 	if err != nil {
-		log.Error().Err(err).Any("payload", req).Msg("repository::GetAllProduct - Failed to prepare query")
+		log.Error().Err(err).Any("payload", req).Msg("repository::GetProduct - Failed to prepare query")
 		return nil, err
 	}
 	defer nstmt.Close()
 
 	err = nstmt.SelectContext(ctx, &data, arg)
 	if err != nil {
-		log.Error().Err(err).Any("payload", req).Msg("repository::GetAllProduct - Failed to get all product")
+		log.Error().Err(err).Any("payload", req).Msg("repository::GetProduct - Failed to get  product")
 		return nil, err
 	}
 
 	for _, d := range data {
-		res.Items = append(res.Items, entity.GetAllProductItem{
-			Id:     d.Id,
-			ShopId: d.ShopId,
-			// CategoryId:  d.CategoryId,
+		// kalau requestnya
+		// var categoryIds []string
+		// if err := json.Unmarshal([]byte(d.CategoryIds), &categoryIds); err != nil {
+		// 	log.Error().Err(err).Msg("repository::GetProduct - Failed to unmarshal category_ids")
+		// 	return nil, err
+		// }
+
+		res.Items = append(res.Items, entity.GetProductItem{
+			Id:          d.Id,
+			ShopId:      d.ShopId,
 			Name:        d.Name,
 			Description: d.Description,
 			Price:       d.Price,
 			Stocks:      d.Stocks,
 			CreatedAt:   d.CreatedAt,
 			UpdatedAt:   d.UpdatedAt,
+			CategoryIds: d.CategoryIds,
 		})
 		res.Meta.TotalData = d.TotalData
 	}

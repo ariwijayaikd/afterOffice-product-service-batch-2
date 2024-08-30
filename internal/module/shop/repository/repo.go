@@ -3,7 +3,9 @@ package repository
 import (
 	"codebase-app/internal/module/shop/entity"
 	"codebase-app/internal/module/shop/ports"
+	"codebase-app/pkg/errmsg"
 	"context"
+	"database/sql"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/rs/zerolog/log"
@@ -34,6 +36,7 @@ func (r *shopRepository) CreateShop(ctx context.Context, req *entity.CreateShopR
 		req.Name,
 		req.Description,
 		req.Terms).Scan(&resp.Id)
+	// log error jika gagal menjalankan query
 	if err != nil {
 		log.Error().Err(err).Any("payload", req).Msg("repository::CreateShop - Failed to create shop")
 		return nil, err
@@ -48,11 +51,18 @@ func (r *shopRepository) GetShop(ctx context.Context, req *entity.GetShopRequest
 	query := `
 		SELECT name, description, terms
 		FROM shops
-		WHERE id = ?
+		WHERE id = ? AND deleted_at IS NULL
 	`
 
 	err := r.db.QueryRowxContext(ctx, r.db.Rebind(query), req.Id).StructScan(resp)
+	// log error jika gagal menjalankan query
 	if err != nil {
+		// log error jika shop_id atau user_id tidak ditemukan
+		if err == sql.ErrNoRows {
+			log.Error().Err(err).Any("payload", req).Msg("repository::GetShop - No content found")
+			return nil, errmsg.NewCustomErrors(204)
+			// return nil, errmsg.NewCustomErrors(204, errmsg.WithMessage("Shop tidak ditemukan"))
+		}
 		log.Error().Err(err).Any("payload", req).Msg("repository::GetShop - Failed to get shop")
 		return nil, err
 	}
@@ -63,14 +73,29 @@ func (r *shopRepository) GetShop(ctx context.Context, req *entity.GetShopRequest
 func (r *shopRepository) DeleteShop(ctx context.Context, req *entity.DeleteShopRequest) error {
 	query := `
 		UPDATE shops
-		SET deleted_at = NOW()
+		SET deleted_at = NOW(), soft_delete = true
 		WHERE id = ? AND user_id = ?
 	`
 
-	_, err := r.db.ExecContext(ctx, r.db.Rebind(query), req.Id, req.UserId)
+	result, err := r.db.ExecContext(ctx, r.db.Rebind(query), req.Id, req.UserId)
+
+	// log error jika gagal menjalankan query
 	if err != nil {
-		log.Error().Err(err).Any("payload", req).Msg("repository::DeleteShop - Failed to delete shop")
+		log.Error().Err(err).Any("payload", req).Msg("repository::DeleteShop - Failed to execute query")
 		return err
+	}
+
+	// log error gagal mendapatkan rows affected
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		log.Error().Err(err).Any("payload", req).Msg("repository::DeleteShop - Failed to get row affected")
+		return err
+	}
+
+	// log error jika shop_id atau user_id tidak ditemukan
+	if rowsAffected == 0 {
+		log.Error().Any("payload", req).Msg("repository::DeleteShop - No rows affected")
+		return errmsg.NewCustomErrors(204)
 	}
 
 	return nil
@@ -81,7 +106,7 @@ func (r *shopRepository) UpdateShop(ctx context.Context, req *entity.UpdateShopR
 
 	query := `
 		UPDATE shops
-		SET name = ?, description = ?, terms = ?, updated_at = NOW()
+		SET name = ?, description = ?, terms = ?, soft_delete = ?, updated_at = NOW()
 		WHERE id = ? AND user_id = ?
 		RETURNING id
 	`
@@ -90,9 +115,17 @@ func (r *shopRepository) UpdateShop(ctx context.Context, req *entity.UpdateShopR
 		req.Name,
 		req.Description,
 		req.Terms,
+		req.SoftDelete,
 		req.Id,
 		req.UserId).Scan(&resp.Id)
+	// log error jika gagal menjalankan query
 	if err != nil {
+		// log error jika shop_id atau user_id tidak ditemukan
+		if err == sql.ErrNoRows {
+			log.Error().Err(err).Any("payload", req).Msg("repository::UpdateShop - No content found")
+			return nil, errmsg.NewCustomErrors(204)
+			// return nil, errmsg.NewCustomErrors(204, errmsg.WithMessage("Shop tidak ditemukan"))
+		}
 		log.Error().Err(err).Any("payload", req).Msg("repository::UpdateShop - Failed to update shop")
 		return nil, err
 	}
@@ -120,6 +153,7 @@ func (r *shopRepository) GetShops(ctx context.Context, req *entity.ShopsRequest)
 		FROM shops
 		WHERE
 			deleted_at IS NULL
+			AND soft_delete = false
 			AND user_id = ?
 		LIMIT ? OFFSET ?
 	`
@@ -129,7 +163,14 @@ func (r *shopRepository) GetShops(ctx context.Context, req *entity.ShopsRequest)
 		req.Paginate,
 		req.Paginate*(req.Page-1),
 	)
+
+	// log error jika gagal menjalankan query
 	if err != nil {
+		// log error jika shop_id atau user_id tidak ditemukan
+		if err == sql.ErrNoRows {
+			log.Error().Err(err).Any("payload", req).Msg("repository::GetShop - No content found")
+			return resp, errmsg.NewCustomErrors(204)
+		}
 		log.Error().Err(err).Any("payload", req).Msg("repository::GetShops - Failed to get shops")
 		return nil, err
 	}
